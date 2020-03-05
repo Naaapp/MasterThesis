@@ -1,0 +1,1 @@
+{"__kind__": "instance", "args": [], "class": "gluonts.model.npts._predictor.NPTSPredictor", "kwargs": {"context_length": null, "exp_kernel_weights": 1.0, "feature_scale": 1000.0, "freq": "H", "kernel_type": "exponential", "num_default_time_features": 1, "prediction_length": 48, "use_default_time_features": true, "use_seasonal_model": true}}
