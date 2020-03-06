@@ -1,1 +1,1 @@
-{"SimpleFeedForward": 11884.12109375, "CanonicalRNN": 33465.57275390625, "SeasonalNaive": 44650.43994140625, "GaussianProcess": 51262.60971492979}
+{"SimpleFeedForward": 4240.27734375, "CanonicalRNN": 38446.89404296875}

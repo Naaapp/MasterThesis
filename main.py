@@ -10,24 +10,32 @@ import json
 import pandas as pd
 import numpy as np
 from gluonts.dataset.repository.datasets import get_dataset
+import mxnet as mx
 
-# Import predefined dataset
-# pre_dataset = get_dataset("m4_hourly", regenerate=False)
-# dataset0 = dt.Dataset(pre_dataset)
+from mxnet import nd, gpu, gluon, autograd
+from mxnet.gluon import nn
+from mxnet.gluon.data.vision import datasets, transforms
+import time
 
 # Import dataset
-df = pd.read_csv("datasets/6months-minutes.csv")
-imported_dataset = np.array([df['Active Power'].to_numpy()])
-prediction_length = 10
-context_length = 60 * 24  # One day
-freq = "1min"
-start = pd.Timestamp("01-04-2019", freq=freq)
-dataset = dt.Dataset(custom_dataset=imported_dataset, start=start, freq=freq,
-                     prediction_length=prediction_length,
-                     learning_length=context_length)
+# df = pd.read_csv("datasets/6months-minutes.csv")
+# imported_dataset = np.array([df['Active Power'].to_numpy()])
+# prediction_length = 10
+# context_length = 60 * 1  # One day
+# freq = "1min"
+# start = pd.Timestamp("01-04-2019", freq=freq)
+# dataset = dt.Dataset(custom_dataset=imported_dataset, start=start, freq=freq,
+#                      prediction_length=prediction_length,
+#                      learning_length=context_length)
+
+# Import predefined dataset
+pre_dataset = get_dataset("m4_hourly", regenerate=False)
+dataset = dt.Dataset(pre_dataset)
 
 chosen_metric = "QuantileLoss[0.5]"
-models = ["SeasonalNaive", "GaussianProcess"]
+
+
+models = ["DeepAr"]
 for model in models:
     forecasts, tss = forecast_dataset(dataset, model=model,
                                       epochs=5)
