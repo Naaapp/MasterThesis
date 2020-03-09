@@ -6,7 +6,7 @@ import numpy as np
 
 
 def plot_prob_forecasts(ts_entry, forecast_entry, plot_length,
-                        prediction_interval):
+                        prediction_interval, model, epochs):
     legend = ["observations",
               "median prediction"] + [f"{k}% prediction interval"
                                       for k in
@@ -15,10 +15,11 @@ def plot_prob_forecasts(ts_entry, forecast_entry, plot_length,
     fig, ax = plt.subplots(1, 1, figsize=(10, 7))
     ts_entry[-plot_length:].plot(ax=ax)  # plot the time series
     forecast_entry.plot(prediction_intervals=prediction_interval, color='g')
+
     plt.grid(which="both")
     plt.legend(legend, loc="upper left")
-    plt.show()
-
+    plt.savefig("plots/forecast_"+str(plot_length)+"_"+model+"_"+str(epochs)+".png")
+    plt.close()
 
 def plot_train_test_dataset_first(dataset):
     entry = next(iter(dataset.train_ds))
@@ -86,7 +87,6 @@ def add_agg_metric_to_dict(dataset, forecasts, tss, model,metric):
 def plot_agg_metric_dict(metric):
     with open("agg_metrics/" + metric + '.txt') as json_file:
         current_dict = json.load(json_file)
-
     plt.bar(list(current_dict.keys()), current_dict.values(), color='g')
     plt.title(metric + " comparison")
     plt.show()
