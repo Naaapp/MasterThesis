@@ -1,10 +1,14 @@
+# OSError: libcudart.so.9.2: cannot open shared object file: No such file or directory :
+# sudo ldconfig /usr/local/cuda/lib64
+
 from gluonts.dataset.common import ListDataset
+from gluonts.distribution import GaussianOutput
 
 import dataset as dt
 from plots import plot_train_test_dataset_first, plot_prob_forecasts, \
     plot_agg_metric_dict, hist_plot_item_metrics
 from forecast import forecast_dataset
-from plots import add_agg_metric_to_dict, save_item_metrics
+from plots import add_agg_metric_to_dict, save_item_metrics, add_bandwidth_to_dict, plot_bandwidth_dict, plot_distr_params
 import matplotlib.pyplot as plt
 import json
 import pandas as pd
@@ -20,11 +24,9 @@ import time
 # Import dataset
 df = pd.read_csv("datasets/6months-minutes.csv")
 imported_dataset = np.array([df['Active Power'].to_numpy()])
-cardinality = 183
-imported_dataset = imported_dataset.reshape(cardinality, -1)  # Split by days
-print(imported_dataset)
-
-imported_dataset = np.random.normal(size=(183, 1500))
+n_sample = 183
+imported_dataset = imported_dataset.reshape(n_sample, -1)  # Split by days
+imported_dataset = imported_dataset / 1000
 
 prediction_length = 10
 context_length = 60 * 1  # One day
@@ -34,25 +36,36 @@ dataset = dt.Dataset(custom_dataset=imported_dataset, start=start, freq=freq,
                      prediction_length=prediction_length,
                      learning_length=context_length, cardinality=list([1]))
 
-# Import predefined dataset
-# pre_dataset = get_dataset("m4_hourly", regenerate=False)
-# dataset = dt.Dataset(pre_dataset)
-
-chosen_metric = "QuantileLoss[0.5]"
+chosen_metric = "Coverage"
 
 # models = ["SimpleFeedForward", "CanonicalRNN", "DeepAr", "DeepFactor", "GaussianProcess",
 #           "NPTS", "MQCNN", "MQRNN", "R", "SeasonalNaive"]
+# distributions = ["Gaussian", "Laplace", "PiecewiseLinear", "Uniform", ]
+# No quantiles in Student
 
-models = ["cSimpleFeedForward", "SimpleFeedForward", "CanonicalRNN", "DeepAr", "DeepFactor", "GaussianProcess",
-          "NPTS", "MQCNN", "MQRNN", "R", "SeasonalNaive"]
+distributions = ["PiecewiseLinear"]
+models = ["cSimpleFeedForward", ]
+alphas = [0, 5]
 
-for model in models:
-    epochs = 100
-    forecasts, tss = forecast_dataset(dataset, model=model,
-                                      epochs=epochs)
-    add_agg_metric_to_dict(dataset, forecasts, tss, model, chosen_metric)
-    plot_prob_forecasts(tss[0], forecasts[0], 60, [50, 90, 99], model, epochs)
-    plot_prob_forecasts(tss[0], forecasts[0], 60 * 3, [50, 90, 99], model, epochs)
-    save_item_metrics(dataset, forecasts, tss, model, chosen_metric)
+for distribution in distributions:
+    for alpha in alphas:
+        for model in models:
+            epochs = 10
+            forecasts, tss = forecast_dataset(dataset, model=model, distrib=distribution,
+                                              epochs=epochs, alpha=alpha)
+
+            add_agg_metric_to_dict(dataset, forecasts, tss, model, alpha, chosen_metric)
+            add_bandwidth_to_dict(forecasts, model, alpha)
+            plot_prob_forecasts(tss[0], forecasts[0], 60, [50, 90, 99], model, alpha, epochs, distribution)
+            plot_prob_forecasts(tss[0], forecasts[0], 60 * 3, [50, 90, 99], model, alpha, epochs, distribution)
+            save_item_metrics(dataset, forecasts, tss, model, chosen_metric)
 
 plot_agg_metric_dict(chosen_metric)
+plot_bandwidth_dict()
+
+plot_distr_params(models, alphas, distributions )
+
+# hist_plot_item_metrics(chosen_metric, models)  # Not precise for Coverage (too much around)
+
+
+

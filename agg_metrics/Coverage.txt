@@ -1,0 +1,1 @@
+{"cSimpleFeedForward 0": -0.009125683060109394, "cSimpleFeedForward 10": 0.009453551912568355, "cSimpleFeedForward 100": 0.010000000000000005, "cSimpleFeedForward 1": 0.002349726775956236, "cSimpleFeedForward 5": -0.004207650273224055, "cSimpleFeedForward 9": 0.009453551912568355}

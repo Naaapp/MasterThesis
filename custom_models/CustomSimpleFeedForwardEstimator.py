@@ -22,17 +22,22 @@ class CustomSimpleFeedForwardEstimator(GluonEstimator):
             context_length: int,
             freq: str,
             distr_output: DistributionOutput,
+            distr_output_type: str,
             num_cells: int,
             num_sample_paths: int = 100,
-            trainer: Trainer = Trainer()
+            trainer: Trainer = Trainer(),
+            alpha: int = 0
     ) -> None:
         super().__init__(trainer=trainer)
         self.prediction_length = prediction_length
         self.context_length = context_length
         self.freq = freq
         self.distr_output = distr_output
+        self.distr_output_type = distr_output_type,
+        self.distr_output_type = self.distr_output_type[0]  # Make no sense but type is tuple if I not do that
         self.num_cells = num_cells
         self.num_sample_paths = num_sample_paths
+        self.alpha = alpha
 
     def create_transformation(self):
         return InstanceSplitter(
@@ -49,8 +54,10 @@ class CustomSimpleFeedForwardEstimator(GluonEstimator):
         return CustomSimpleFeedForwardTrainNetwork(
             prediction_length=self.prediction_length,
             distr_output=self.distr_output,
+            distr_output_type=self.distr_output_type,
             num_cells=self.num_cells,
-            num_sample_paths=self.num_sample_paths
+            num_sample_paths=self.num_sample_paths,
+            alpha=self.alpha
         )
 
     def create_predictor(
@@ -59,8 +66,10 @@ class CustomSimpleFeedForwardEstimator(GluonEstimator):
         prediction_network = CustomSimpleFeedForwardPredNetwork(
             prediction_length=self.prediction_length,
             distr_output=self.distr_output,
+            distr_output_type=self.distr_output_type,
             num_cells=self.num_cells,
-            num_sample_paths=self.num_sample_paths
+            num_sample_paths=self.num_sample_paths,
+            alpha=self.alpha
         )
 
         copy_parameters(trained_network, prediction_network)

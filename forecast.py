@@ -1,4 +1,5 @@
-from gluonts.distribution import GaussianOutput
+from gluonts.distribution import GaussianOutput, LaplaceOutput, PiecewiseLinearOutput, UniformOutput, \
+    StudentTOutput
 from gluonts.model.simple_feedforward import SimpleFeedForwardEstimator
 from gluonts.model import deepar, canonical, deep_factor, deepstate, gp_forecaster, \
     npts, prophet, r_forecast, seasonal_naive, seq2seq, \
@@ -16,7 +17,20 @@ from custom_models.CustomSimpleFeedForwardEstimator import CustomSimpleFeedForwa
 
 
 def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
-                     model="SimpleFeedForward", r_method="ets"):
+                     model="SimpleFeedForward", r_method="ets", alpha=0, distrib="Gaussian"):
+    if distrib == "Gaussian":
+        distr_output = GaussianOutput()
+    elif distrib == "Laplace":
+        distr_output = LaplaceOutput()
+    elif distrib == "PiecewiseLinear":
+        distr_output = PiecewiseLinearOutput(num_pieces=2)
+    elif distrib == "Uniform":
+        distr_output = UniformOutput()
+    elif distrib == "Student":
+        distr_output = StudentTOutput()
+    else:
+        distr_output = None
+
     if model != "GaussianProcess":
         ctx = mx.Context("gpu")
     else:
@@ -37,7 +51,8 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             prediction_length=dataset.prediction_length,
             context_length=dataset.context_length,
             freq=dataset.freq,
-            trainer=trainer
+            trainer=trainer,
+            distr_output=distr_output
         )
     elif model == "cSimpleFeedForward":  # 10s / epochs for context 60*24
         estimator = CustomSimpleFeedForwardEstimator(
@@ -45,8 +60,10 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             context_length=dataset.context_length,
             freq=dataset.freq,
             trainer=trainer,
-            distr_output=GaussianOutput(),
             num_cells=40,
+            alpha=alpha,
+            distr_output=distr_output,
+            distr_output_type=distrib
         )
     elif model == "CanonicalRNN":  # 80s /epochs for context 60*24, idem for 60*1
         estimator = canonical.CanonicalRNNEstimator(
@@ -54,20 +71,23 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             context_length=dataset.context_length,
             prediction_length=dataset.prediction_length,
             trainer=trainer,
+            distr_output=distr_output,
         )
     elif model == "DeepAr":
         estimator = deepar.DeepAREstimator(
             freq=dataset.freq,
             context_length=dataset.context_length,
             prediction_length=dataset.prediction_length,
-            trainer=trainer
+            trainer=trainer,
+            distr_output=distr_output,
         )
     elif model == "DeepFactor":  # 120 s/epochs if one big time serie, 1.5s if 183 time series
         estimator = deep_factor.DeepFactorEstimator(
             freq=dataset.freq,
             context_length=dataset.context_length,
             prediction_length=dataset.prediction_length,
-            trainer=trainer
+            trainer=trainer,
+            distr_output=distr_output,
         )
     elif model == "DeepState":  # Very slow on cpu
         estimator = deepstate.DeepStateEstimator(
@@ -82,7 +102,7 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             freq=dataset.freq,
             prediction_length=dataset.prediction_length,
             trainer=trainer,
-            cardinality=1,
+            cardinality=1
         )
     elif model == "NPTS":
         estimator = npts.NPTSEstimator(
@@ -161,7 +181,7 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
         )
     else:
         predictor = estimator.train(dataset.train_ds)
-        if model[0] != "c" :
+        if model[0] != "c":
             predictor.serialize(Path("temp"))
             predictor = Predictor.deserialize(Path("temp"), ctx=mx.cpu(0))  # fix for deepstate
 

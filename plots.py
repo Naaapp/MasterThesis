@@ -6,7 +6,7 @@ import numpy as np
 
 
 def plot_prob_forecasts(ts_entry, forecast_entry, plot_length,
-                        prediction_interval, model, epochs):
+                        prediction_interval, model, alpha, epochs, distribution):
     legend = ["observations",
               "median prediction"] + [f"{k}% prediction interval"
                                       for k in
@@ -18,8 +18,11 @@ def plot_prob_forecasts(ts_entry, forecast_entry, plot_length,
 
     plt.grid(which="both")
     plt.legend(legend, loc="upper left")
-    plt.savefig("plots/forecast_"+str(plot_length)+"_"+model+"_"+str(epochs)+".png")
+    plt.title("Forecast :" + model + " " + str(alpha))
+    plt.savefig("plots/forecast_" + str(plot_length) + "_" + model + "_" +
+                str(epochs) + "_" + str(alpha) + "_" + distribution + ".png")
     plt.close()
+
 
 def plot_train_test_dataset_first(dataset):
     entry = next(iter(dataset.train_ds))
@@ -47,11 +50,17 @@ def plot_train_test_dataset_first(dataset):
 
 
 def save_item_metrics(dataset, forecasts, tss, model, metric):
-    evaluator = Evaluator(quantiles=[0.1, 0.5, 0.9])
+    evaluator = Evaluator(quantiles=[0.005, 0.1, 0.5, 0.9, 0.995], )
     agg_metrics, item_metrics = evaluator(iter(tss), iter(forecasts),
                                           num_series=len(dataset.test_ds))
-    print(agg_metrics)
-    item_metric = item_metrics[[metric]].to_numpy()
+    if metric == "Coverage":
+        low_coverage = item_metrics[["Coverage[0.005]"]].to_numpy()
+        high_coverage = item_metrics[["Coverage[0.995]"]].to_numpy()
+        low_score = 0.005 - low_coverage
+        high_score = high_coverage - 0.995
+        item_metric = high_score + low_score
+    else:
+        item_metric = item_metrics[[metric]].to_numpy()
 
     np.save("item_metrics/" + metric + '_' + model + '.npy', item_metric)
 
@@ -59,26 +68,33 @@ def save_item_metrics(dataset, forecasts, tss, model, metric):
 def hist_plot_item_metrics(metric, models):
     for model in models:
         item_metric = np.load("item_metrics/" + metric + '_' + model + '.npy')
-        print(item_metric)
-        plt.hist(item_metric, bins=range(0, 100, 2), rwidth=0.8, label=model,
+        plt.hist(item_metric * 1000, bins=range(-100, 100, 1), rwidth=0.8, label=model,
                  alpha=0.5)
     plt.title(metric)
     plt.legend(loc='upper right')
     plt.show()
 
 
-def add_agg_metric_to_dict(dataset, forecasts, tss, model,metric):
+def add_agg_metric_to_dict(dataset, forecasts, tss, model, alpha, metric):
     try:
         with open("agg_metrics/" + metric + '.txt') as json_file:
             current_dict = json.load(json_file)
     except FileNotFoundError:
         current_dict = dict()
 
-    evaluator = Evaluator(quantiles=[0.1, 0.5, 0.9])
+    evaluator = Evaluator(quantiles=[0.005, 0.1, 0.5, 0.9, 0.995])
     agg_metrics, item_metrics = evaluator(iter(tss), iter(forecasts),
                                           num_series=len(dataset.test_ds))
-    agg_metric = agg_metrics[metric]
-    current_dict[model] = agg_metric
+    if metric == "Coverage":
+        low_coverage = agg_metrics["Coverage[0.005]"]
+        high_coverage = agg_metrics["Coverage[0.995]"]
+        low_score = 0.005 - low_coverage
+        high_score = high_coverage - 0.995
+        agg_metric = high_score + low_score
+    else:
+        agg_metric = agg_metrics[metric]
+
+    current_dict[model + " " + str(alpha)] = agg_metric
 
     with open("agg_metrics/" + metric + '.txt', 'w') as outfile:
         json.dump(current_dict, outfile)
@@ -90,3 +106,54 @@ def plot_agg_metric_dict(metric):
     plt.bar(list(current_dict.keys()), current_dict.values(), color='g')
     plt.title(metric + " comparison")
     plt.show()
+
+
+def add_bandwidth_to_dict(forecasts, model, alpha):
+    try:
+        with open("agg_metrics/bandwidth.txt") as json_file:
+            current_dict = json.load(json_file)
+    except FileNotFoundError:
+        current_dict = dict()
+    bandwidth = np.mean([forecast.quantile(0.995) for forecast in forecasts])
+    bandwidth -= np.mean([forecast.quantile(0.005) for forecast in forecasts])
+    current_dict[model + " " + str(alpha)] = float(bandwidth)
+    with open("agg_metrics/bandwidth.txt", 'w') as outfile:
+        json.dump(current_dict, outfile)
+
+
+def plot_bandwidth_dict():
+    with open("agg_metrics/bandwidth.txt") as json_file:
+        current_dict = json.load(json_file)
+    plt.bar(list(current_dict.keys()), current_dict.values(), color='g')
+    plt.title("bandwidth comparison")
+    plt.show()
+
+
+def plot_distr_params(models, alphas, distributions):
+
+    for distribution in distributions:
+        if distribution == "Gaussian":
+            params = ["mu", "sigma"]
+        elif distribution == "Laplace":
+            params = ["mu", "b"]
+        elif distribution == "PiecewiseLinear":
+            params = ["gamma", "slopes", "knot_spacings"]
+        elif distribution == "Uniform":
+            params = ["low", "high"]
+        elif distribution == "Student":
+            params = ["mu", "sigma", "nu"]
+        else:
+            params = []
+
+        i = 0
+        for param in params:
+            for alpha in alphas:
+                for model in models:
+                    distr_params = np.load("distribution_output/" + model+"_"+distribution+"_"+str(alpha) + ".npy")
+                    plt.hist(distr_params[i], bins=range(0, 10, 1), rwidth=0.8, label=model+"_"+str(alpha),
+                             alpha=0.5)
+            plt.title(param + " of obtained distribution (frequency of values along the time axis) ")
+            plt.legend(loc='upper right')
+            plt.show()
+            i += 1
+
