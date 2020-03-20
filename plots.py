@@ -130,14 +130,13 @@ def plot_bandwidth_dict():
 
 
 def plot_distr_params(models, alphas, distributions):
-
     for distribution in distributions:
         if distribution == "Gaussian":
             params = ["mu", "sigma"]
         elif distribution == "Laplace":
             params = ["mu", "b"]
         elif distribution == "PiecewiseLinear":
-            params = ["gamma", "slopes", "knot_spacings"]
+            params = ["gamma", "b", "knot_positions"]  # b and knot_positions gives only the first value
         elif distribution == "Uniform":
             params = ["low", "high"]
         elif distribution == "Student":
@@ -149,11 +148,19 @@ def plot_distr_params(models, alphas, distributions):
         for param in params:
             for alpha in alphas:
                 for model in models:
-                    distr_params = np.load("distribution_output/" + model+"_"+distribution+"_"+str(alpha) + ".npy")
-                    plt.hist(distr_params[i], bins=range(0, 10, 1), rwidth=0.8, label=model+"_"+str(alpha),
-                             alpha=0.5)
+                    if model[0] == "c":
+                        distr_params = np.load(
+                            "distribution_output/" + model + "_" + distribution + "_" + str(alpha) + ".npy")
+                        print(params[i], alpha, distr_params[i])
+                        plt.hist(distr_params[i], bins=range(0, 10, 1), rwidth=0.8, label=model + "_" + str(alpha),
+                                 alpha=0.5)
             plt.title(param + " of obtained distribution (frequency of values along the time axis) ")
             plt.legend(loc='upper right')
             plt.show()
             i += 1
 
+
+def save_distr_quantiles(model, forecast_entry, quantiles):
+    for quantile_value in quantiles:
+        np.save("distribution_output/" + model + "_" + str(quantile_value).replace(".", "_"),
+                forecast_entry.quantile(quantile_value))

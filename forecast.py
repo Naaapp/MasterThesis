@@ -13,11 +13,13 @@ import mxnet as mx
 from path import Path
 from gluonts.block.encoder import Seq2SeqEncoder
 from mxnet import nd, gpu, gluon, autograd
-from custom_models.CustomSimpleFeedForwardEstimator import CustomSimpleFeedForwardEstimator
+from custom_models.CustomSimpleEstimator import CustomSimpleEstimator
+from custom_models.CustomSimpleFeedFordwardEstimator import CustomSimpleFeedForwardEstimator
 
 
 def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
-                     model="SimpleFeedForward", r_method="ets", alpha=0, distrib="Gaussian"):
+                     model="SimpleFeedForward", r_method="ets", alpha=0, distrib="Gaussian",
+                     quantiles=list([0.005, 0.05, 0.25, 0.5, 0.75, 0.95, 0.995])):
     if distrib == "Gaussian":
         distr_output = GaussianOutput()
     elif distrib == "Laplace":
@@ -52,7 +54,18 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             context_length=dataset.context_length,
             freq=dataset.freq,
             trainer=trainer,
-            distr_output=distr_output
+            distr_output=distr_output,
+        )
+    elif model == "cSimple":  # 10s / epochs for context 60*24
+        estimator = CustomSimpleEstimator(
+            prediction_length=dataset.prediction_length,
+            context_length=dataset.context_length,
+            freq=dataset.freq,
+            trainer=trainer,
+            num_cells=40,
+            alpha=alpha,
+            distr_output=distr_output,
+            distr_output_type=distrib
         )
     elif model == "cSimpleFeedForward":  # 10s / epochs for context 60*24
         estimator = CustomSimpleFeedForwardEstimator(
@@ -60,7 +73,7 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             context_length=dataset.context_length,
             freq=dataset.freq,
             trainer=trainer,
-            num_cells=40,
+            num_hidden_dimensions=[10],
             alpha=alpha,
             distr_output=distr_output,
             distr_output_type=distrib
@@ -115,7 +128,7 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             freq=dataset.freq,
             context_length=dataset.context_length,
             trainer=trainer,
-            quantiles=list([0.005, 0.05, 0.25, 0.5, 0.75, 0.95, 0.995])
+            quantiles=quantiles
         )
     elif model == "MQRNN":
         estimator = seq2seq.MQRNNEstimator(
@@ -123,7 +136,7 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             freq=dataset.freq,
             context_length=dataset.context_length,
             trainer=trainer,
-            quantiles=list([0.005, 0.05, 0.25, 0.5, 0.75, 0.95, 0.995])
+            quantiles=quantiles
         )
     elif model == "RNN2QR":  # Must be investigated
         estimator = seq2seq.RNN2QRForecaster(

@@ -10,11 +10,10 @@ from gluonts.transform import ExpectedNumInstanceSampler, Transformation, Instan
 from mxnet import gluon
 import mxnet as mx
 from mxnet.gluon import HybridBlock
-from custom_models.CustomSimpleFeedForwardNetwork import CustomSimpleFeedForwardTrainNetwork, \
-                                                            CustomSimpleFeedForwardPredNetwork
+from custom_models.CustomSimpleNetwork import CustomSimpleTrainNetwork, CustomSimplePredNetwork
 
 
-class CustomSimpleFeedForwardEstimator(GluonEstimator):
+class CustomSimpleEstimator(GluonEstimator):
     @validated()
     def __init__(
             self,
@@ -34,7 +33,6 @@ class CustomSimpleFeedForwardEstimator(GluonEstimator):
         self.freq = freq
         self.distr_output = distr_output
         self.distr_output_type = distr_output_type,
-        self.distr_output_type = self.distr_output_type[0]  # Make no sense but type is tuple if I not do that
         self.num_cells = num_cells
         self.num_sample_paths = num_sample_paths
         self.alpha = alpha
@@ -50,8 +48,8 @@ class CustomSimpleFeedForwardEstimator(GluonEstimator):
             future_length=self.prediction_length,
         )
 
-    def create_training_network(self) -> CustomSimpleFeedForwardTrainNetwork:
-        return CustomSimpleFeedForwardTrainNetwork(
+    def create_training_network(self) -> CustomSimpleTrainNetwork:
+        return CustomSimpleTrainNetwork(
             prediction_length=self.prediction_length,
             distr_output=self.distr_output,
             distr_output_type=self.distr_output_type,
@@ -63,7 +61,7 @@ class CustomSimpleFeedForwardEstimator(GluonEstimator):
     def create_predictor(
             self, transformation: Transformation, trained_network: HybridBlock
     ) -> Predictor:
-        prediction_network = CustomSimpleFeedForwardPredNetwork(
+        prediction_network = CustomSimplePredNetwork(
             prediction_length=self.prediction_length,
             distr_output=self.distr_output,
             distr_output_type=self.distr_output_type,
