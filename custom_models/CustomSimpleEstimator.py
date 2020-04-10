@@ -32,7 +32,7 @@ class CustomSimpleEstimator(GluonEstimator):
         self.context_length = context_length
         self.freq = freq
         self.distr_output = distr_output
-        self.distr_output_type = distr_output_type,
+        self.distr_output_type = distr_output_type
         self.num_cells = num_cells
         self.num_sample_paths = num_sample_paths
         self.alpha = alpha

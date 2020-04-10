@@ -6,7 +6,7 @@ import numpy as np
 
 
 def plot_prob_forecasts(ts_entry, forecast_entry, plot_length,
-                        prediction_interval, model, alpha, epochs, distribution):
+                        prediction_interval, model, plot_name, is_show):
     legend = ["observations",
               "median prediction"] + [f"{k}% prediction interval"
                                       for k in
@@ -18,9 +18,10 @@ def plot_prob_forecasts(ts_entry, forecast_entry, plot_length,
 
     plt.grid(which="both")
     plt.legend(legend, loc="upper left")
-    plt.title("Forecast :" + model + " " + str(alpha))
-    plt.savefig("plots/forecast_" + str(plot_length) + "_" + model + "_" +
-                str(epochs) + "_" + str(alpha) + "_" + distribution + ".png")
+    plt.title("Forecast : " + model)
+    if is_show:
+        plt.show()
+    plt.savefig("plots/forecast_" + plot_name + "_" + str(plot_length) + ".png")
     plt.close()
 
 
@@ -75,9 +76,9 @@ def hist_plot_item_metrics(metric, models):
     plt.show()
 
 
-def add_agg_metric_to_dict(dataset, forecasts, tss, model, alpha, metric):
+def add_agg_metric_to_dict(dataset, forecasts, tss, metric, plot_name, params_name, params_val):
     try:
-        with open("agg_metrics/" + metric + '.txt') as json_file:
+        with open("agg_metrics/" + plot_name + "_" + params_name + "_" + metric + '.txt') as json_file:
             current_dict = json.load(json_file)
     except FileNotFoundError:
         current_dict = dict()
@@ -94,38 +95,38 @@ def add_agg_metric_to_dict(dataset, forecasts, tss, model, alpha, metric):
     else:
         agg_metric = agg_metrics[metric]
 
-    current_dict[model + " " + str(alpha)] = agg_metric
+    current_dict[params_val] = agg_metric
 
-    with open("agg_metrics/" + metric + '.txt', 'w') as outfile:
+    with open("agg_metrics/" + plot_name + "_" + params_name + "_" + metric + '.txt', 'w') as outfile:
         json.dump(current_dict, outfile)
 
 
-def plot_agg_metric_dict(metric):
-    with open("agg_metrics/" + metric + '.txt') as json_file:
+def plot_agg_metric_dict(metric, plot_name, params_name):
+    with open("agg_metrics/" + plot_name + "_" + params_name + "_" + metric + '.txt') as json_file:
         current_dict = json.load(json_file)
     plt.bar(list(current_dict.keys()), current_dict.values(), color='g')
-    plt.title(metric + " comparison")
+    plt.title(metric + " " + plot_name + " " + params_name + " comparison")
     plt.show()
 
 
-def add_bandwidth_to_dict(forecasts, model, alpha):
+def add_bandwidth_to_dict(forecasts, plot_name, params_name, params_val):
     try:
-        with open("agg_metrics/bandwidth.txt") as json_file:
+        with open("agg_metrics/" + plot_name + "_" + params_name + "_bandwidth.txt") as json_file:
             current_dict = json.load(json_file)
     except FileNotFoundError:
         current_dict = dict()
     bandwidth = np.mean([forecast.quantile(0.995) for forecast in forecasts])
     bandwidth -= np.mean([forecast.quantile(0.005) for forecast in forecasts])
-    current_dict[model + " " + str(alpha)] = float(bandwidth)
-    with open("agg_metrics/bandwidth.txt", 'w') as outfile:
+    current_dict[params_val] = float(bandwidth)
+    with open("agg_metrics/" + plot_name + "_" + params_name + "_bandwidth.txt", 'w') as outfile:
         json.dump(current_dict, outfile)
 
 
-def plot_bandwidth_dict():
-    with open("agg_metrics/bandwidth.txt") as json_file:
+def plot_bandwidth_dict(plot_name, params_name):
+    with open("agg_metrics/" + plot_name + "_" + params_name + "_bandwidth.txt") as json_file:
         current_dict = json.load(json_file)
     plt.bar(list(current_dict.keys()), current_dict.values(), color='g')
-    plt.title("bandwidth comparison")
+    plt.title("bandwidth" + " " + plot_name + " " + params_name + " comparison")
     plt.show()
 
 

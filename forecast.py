@@ -15,11 +15,31 @@ from gluonts.block.encoder import Seq2SeqEncoder
 from mxnet import nd, gpu, gluon, autograd
 from custom_models.CustomSimpleEstimator import CustomSimpleEstimator
 from custom_models.CustomSimpleFeedFordwardEstimator import CustomSimpleFeedForwardEstimator
+from custom_models.CustomCanonicalEstimator import CustomCanonicalRNNEstimator
 
 
-def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
-                     model="SimpleFeedForward", r_method="ets", alpha=0, distrib="Gaussian",
-                     quantiles=list([0.005, 0.05, 0.25, 0.5, 0.75, 0.95, 0.995])):
+def forecast_dataset(dataset,
+                     epochs=100,
+                     learning_rate=1e-3,
+                     num_samples=100,
+                     model="SimpleFeedForward",
+                     r_method="ets",
+                     alpha=0,
+                     distrib="Gaussian",
+                     quantiles=list([0.005, 0.05, 0.25, 0.5, 0.75, 0.95, 0.995]),
+                     num_cells_simple=100,
+                     num_hidden_dimensions=[10],
+                     num_cells_rnn=50,
+                     num_cells_ar=40,
+                     num_layers_rnn=1,
+                     num_layers_ar=2,
+                     embedding_dimension=10,
+                     num_hidden_global=50,
+                     num_layers_global=1,
+                     num_factors=10,
+                     mlp_final_dim=20
+                     ):
+
     if distrib == "Gaussian":
         distr_output = GaussianOutput()
     elif distrib == "Laplace":
@@ -47,44 +67,57 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
                       )
 
     # Estimator (if machine learning model)
-    if model == "SimpleFeedForward":  # 10s / epochs for context 60*24
-        estimator = SimpleFeedForwardEstimator(
-            num_hidden_dimensions=[10],
-            prediction_length=dataset.prediction_length,
-            context_length=dataset.context_length,
-            freq=dataset.freq,
-            trainer=trainer,
-            distr_output=distr_output,
-        )
-    elif model == "cSimple":  # 10s / epochs for context 60*24
+    if model == "cSimple":
         estimator = CustomSimpleEstimator(
             prediction_length=dataset.prediction_length,
             context_length=dataset.context_length,
             freq=dataset.freq,
             trainer=trainer,
-            num_cells=40,
             alpha=alpha,
             distr_output=distr_output,
-            distr_output_type=distrib
+            distr_output_type=distrib,
+            num_cells=num_cells_simple,
         )
-    elif model == "cSimpleFeedForward":  # 10s / epochs for context 60*24
+    elif model == "SimpleFeedForward":
+        estimator = SimpleFeedForwardEstimator(
+            prediction_length=dataset.prediction_length,
+            context_length=dataset.context_length,
+            freq=dataset.freq,
+            trainer=trainer,
+            distr_output=distr_output,
+            num_hidden_dimensions=num_hidden_dimensions,
+        )
+    elif model == "cSimpleFeedForward":
         estimator = CustomSimpleFeedForwardEstimator(
             prediction_length=dataset.prediction_length,
             context_length=dataset.context_length,
             freq=dataset.freq,
             trainer=trainer,
-            num_hidden_dimensions=[10],
             alpha=alpha,
             distr_output=distr_output,
-            distr_output_type=distrib
+            distr_output_type=distrib,
+            num_hidden_dimensions=num_hidden_dimensions,
         )
-    elif model == "CanonicalRNN":  # 80s /epochs for context 60*24, idem for 60*1
+    elif model == "CanonicalRNN":
         estimator = canonical.CanonicalRNNEstimator(
             freq=dataset.freq,
             context_length=dataset.context_length,
             prediction_length=dataset.prediction_length,
             trainer=trainer,
+            distr_output=distr_output
+        )
+    elif model == "cCanonicalRNN":
+        estimator = CustomCanonicalRNNEstimator(
+            freq=dataset.freq,
+            context_length=dataset.context_length,
+            prediction_length=dataset.prediction_length,
+            trainer=trainer,
             distr_output=distr_output,
+            distr_output_type=distrib,
+            alpha=alpha,
+            num_layers=num_layers_rnn,
+            num_cells=num_cells_rnn,
+            embedding_dimension=embedding_dimension
         )
     elif model == "DeepAr":
         estimator = deepar.DeepAREstimator(
@@ -93,14 +126,19 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             prediction_length=dataset.prediction_length,
             trainer=trainer,
             distr_output=distr_output,
+            num_cells=num_cells_ar,
+            num_layers=num_layers_ar
         )
-    elif model == "DeepFactor":  # 120 s/epochs if one big time serie, 1.5s if 183 time series
+    elif model == "DeepFactor":
         estimator = deep_factor.DeepFactorEstimator(
             freq=dataset.freq,
             context_length=dataset.context_length,
             prediction_length=dataset.prediction_length,
             trainer=trainer,
             distr_output=distr_output,
+            num_hidden_global=num_hidden_global,
+            num_layers_global=num_layers_global,
+            num_factors=num_factors,
         )
     elif model == "DeepState":  # Very slow on cpu
         estimator = deepstate.DeepStateEstimator(
@@ -110,12 +148,12 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             cardinality=list([1]),
             use_feat_static_cat=False
         )
-    elif model == "GaussianProcess":  # CPU / GPU problem
+    elif model == "GaussianProcess":
         estimator = gp_forecaster.GaussianProcessEstimator(
             freq=dataset.freq,
             prediction_length=dataset.prediction_length,
             trainer=trainer,
-            cardinality=1
+            cardinality=183
         )
     elif model == "NPTS":
         estimator = npts.NPTSEstimator(
@@ -128,7 +166,8 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             freq=dataset.freq,
             context_length=dataset.context_length,
             trainer=trainer,
-            quantiles=quantiles
+            quantiles=quantiles,
+            mlp_final_dim=mlp_final_dim
         )
     elif model == "MQRNN":
         estimator = seq2seq.MQRNNEstimator(
@@ -136,7 +175,8 @@ def forecast_dataset(dataset, epochs=100, learning_rate=1e-3, num_samples=100,
             freq=dataset.freq,
             context_length=dataset.context_length,
             trainer=trainer,
-            quantiles=quantiles
+            quantiles=quantiles,
+            mlp_final_dim=mlp_final_dim
         )
     elif model == "RNN2QR":  # Must be investigated
         estimator = seq2seq.RNN2QRForecaster(

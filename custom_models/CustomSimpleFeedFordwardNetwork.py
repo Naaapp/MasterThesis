@@ -1,26 +1,28 @@
+
 # Standard library imports
 from typing import List
 
 # Third-party imports
 import mxnet as mx
-from mxnet import nd
 
 # First-party imports
 from gluonts.block.scaler import MeanScaler, NOPScaler
 from gluonts.core.component import validated
 from gluonts.distribution import Distribution, DistributionOutput
 from gluonts.model.common import Tensor
-from utils import compute_custom_loss, save_distr_params
+from utils import save_distr_params, compute_custom_loss
 
 
 class CustomSimpleFeedForwardNetworkBase(mx.gluon.HybridBlock):
     """
     Abstract base class to implement feed-forward networks for probabilistic
     time series prediction.
+
     This class does not implement hybrid_forward: this is delegated
     to the two subclasses SimpleFeedForwardTrainingNetwork and
     SimpleFeedForwardPredictionNetwork, that define respectively how to
     compute the loss and how to generate predictions.
+
     Parameters
     ----------
     num_hidden_dimensions
@@ -50,9 +52,8 @@ class CustomSimpleFeedForwardNetworkBase(mx.gluon.HybridBlock):
         batch_normalization: bool,
         mean_scaling: bool,
         distr_output: DistributionOutput,
-        distr_output_type,
-        network_type,
-        alpha=0,
+        distr_output_type: str,
+        alpha: int,
         count=0,
         **kwargs,
     ) -> None:
@@ -67,13 +68,7 @@ class CustomSimpleFeedForwardNetworkBase(mx.gluon.HybridBlock):
         self.distr_output_type = distr_output_type
         self.alpha = alpha
         self.count = count
-        self.network_type = network_type
-
         with self.name_scope():
-            # We have a problem with predict network creation, the distr_output become for an unknown reason a tuple.
-            if self.network_type == "predictor":
-                self.distr_output = self.distr_output[0]
-
             self.distr_args_proj = self.distr_output.get_args_proj()
             self.mlp = mx.gluon.nn.HybridSequential()
             dims = self.num_hidden_dimensions
@@ -95,12 +90,14 @@ class CustomSimpleFeedForwardNetworkBase(mx.gluon.HybridBlock):
         """
         Given past target values, applies the feed-forward network and
         maps the output to a probability distribution for future observations.
+
         Parameters
         ----------
         F
         past_target
             Tensor containing past target observations.
             Shape: (batch_size, context_length, target_dim).
+
         Returns
         -------
         Distribution
@@ -127,6 +124,7 @@ class CustomSimpleFeedForwardTrainingNetwork(CustomSimpleFeedForwardNetworkBase)
         """
         Computes a probability distribution for future data given the past,
         and returns the loss associated with the actual future observations.
+
         Parameters
         ----------
         F
@@ -136,6 +134,7 @@ class CustomSimpleFeedForwardTrainingNetwork(CustomSimpleFeedForwardNetworkBase)
         future_target
             Tensor with future observations.
             Shape: (batch_size, prediction_length, target_dim).
+
         Returns
         -------
         Tensor
@@ -156,7 +155,6 @@ class CustomSimpleFeedForwardPredictionNetwork(CustomSimpleFeedForwardNetworkBas
     def __init__(
         self, num_parallel_samples: int = 100, *args, **kwargs
     ) -> None:
-
         super().__init__(*args, **kwargs)
         self.num_parallel_samples = num_parallel_samples
 
@@ -165,19 +163,21 @@ class CustomSimpleFeedForwardPredictionNetwork(CustomSimpleFeedForwardNetworkBas
         """
         Computes a probability distribution for future data given the past,
         and draws samples from it.
+
         Parameters
         ----------
         F
         past_target
             Tensor with past observations.
             Shape: (batch_size, context_length, target_dim).
+
         Returns
         -------
         Tensor
             Prediction sample. Shape: (batch_size, samples, prediction_length).
         """
         distr = self.get_distr(F, past_target)
-        save_distr_params(distr, self.count, self.distr_output_type, self.alpha, "cSimpleFeedForward")
+        save_distr_params(distr.base_distribution, self.count, self.distr_output_type, self.alpha, "cSimpleFeedForward")
 
         # (num_samples, batch_size, prediction_length)
         samples = distr.sample(self.num_parallel_samples)

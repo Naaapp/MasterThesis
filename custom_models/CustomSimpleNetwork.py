@@ -20,7 +20,6 @@ class CustomSimpleNetwork(gluon.HybridBlock):
         self.prediction_length = prediction_length
         self.distr_output = distr_output
         self.distr_output_type = distr_output_type
-        self.distr_output_type = self.distr_output_type[0]
         self.num_cells = num_cells
         self.num_sample_paths = num_sample_paths
         self.alpha = alpha

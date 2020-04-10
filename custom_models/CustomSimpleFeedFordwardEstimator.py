@@ -1,3 +1,4 @@
+
 # Standard library imports
 from typing import List, Optional
 
@@ -7,7 +8,7 @@ from mxnet.gluon import HybridBlock
 # First-party imports
 from gluonts.core.component import validated
 from gluonts.dataset.field_names import FieldName
-from gluonts.distribution import DistributionOutput, StudentTOutput, GaussianOutput
+from gluonts.distribution import DistributionOutput, StudentTOutput
 from gluonts.model.estimator import GluonEstimator
 from gluonts.model.predictor import Predictor, RepresentableBlockPredictor
 from gluonts.trainer import Trainer
@@ -19,28 +20,40 @@ from gluonts.transform import (
 )
 
 # Relative imports
-from custom_models.CustomSimpleFeedFordwardNetwork import CustomSimpleFeedForwardTrainingNetwork, \
-    CustomSimpleFeedForwardPredictionNetwork
+from custom_models.CustomSimpleFeedFordwardNetwork import (
+    CustomSimpleFeedForwardPredictionNetwork,
+    CustomSimpleFeedForwardTrainingNetwork,
+)
 
 
 class CustomSimpleFeedForwardEstimator(GluonEstimator):
     """
     SimpleFeedForwardEstimator shows how to build a simple MLP model predicting
     the next target time-steps given the previous ones.
+
     Given that we want to define a gluon model trainable by SGD, we inherit the
     parent class `GluonEstimator` that handles most of the logic for fitting a
     neural-network.
+
     We thus only have to define:
+
     1. How the data is transformed before being fed to our model::
+
         def create_transformation(self) -> Transformation
+
     2. How the training happens::
+
         def create_training_network(self) -> HybridBlock
+
     3. how the predictions can be made for a batch given a trained network::
+
         def create_predictor(
              self,
              transformation: Transformation,
              trained_net: HybridBlock,
         ) -> Predictor
+
+
     Parameters
     ----------
     freq
@@ -75,11 +88,11 @@ class CustomSimpleFeedForwardEstimator(GluonEstimator):
         self,
         freq: str,
         prediction_length: int,
-        distr_output_type: str,
-        distr_output: DistributionOutput,
         trainer: Trainer = Trainer(),
         num_hidden_dimensions: Optional[List[int]] = None,
         context_length: Optional[int] = None,
+        distr_output: DistributionOutput = StudentTOutput(),
+        distr_output_type: str = "Student",
         batch_normalization: bool = False,
         mean_scaling: bool = True,
         num_parallel_samples: int = 100,
@@ -113,9 +126,8 @@ class CustomSimpleFeedForwardEstimator(GluonEstimator):
             context_length if context_length is not None else prediction_length
         )
         self.freq = freq
-        self.distr_output = distr_output,
-        self.distr_output_type = distr_output_type,
-        self.distr_output_type = self.distr_output_type[0]
+        self.distr_output = distr_output
+        self.distr_output_type = distr_output_type
         self.batch_normalization = batch_normalization
         self.mean_scaling = mean_scaling
         self.num_parallel_samples = num_parallel_samples
@@ -151,12 +163,11 @@ class CustomSimpleFeedForwardEstimator(GluonEstimator):
             num_hidden_dimensions=self.num_hidden_dimensions,
             prediction_length=self.prediction_length,
             context_length=self.context_length,
-            distr_output=self.distr_output[0],
+            distr_output=self.distr_output,
             distr_output_type=self.distr_output_type,
             batch_normalization=self.batch_normalization,
             mean_scaling=self.mean_scaling,
-            alpha=self.alpha,
-            network_type="training"
+            alpha=self.alpha
         )
 
     # we now define how the prediction happens given that we are provided a
@@ -174,8 +185,7 @@ class CustomSimpleFeedForwardEstimator(GluonEstimator):
             mean_scaling=self.mean_scaling,
             params=trained_network.collect_params(),
             num_parallel_samples=self.num_parallel_samples,
-            alpha=self.alpha,
-            network_type="predictor"
+            alpha=self.alpha
         )
 
         return RepresentableBlockPredictor(
