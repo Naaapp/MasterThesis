@@ -1,1 +1,0 @@
-{"cSimpleFeedForward_0.9_Gaussian": 5.690807819366455}
