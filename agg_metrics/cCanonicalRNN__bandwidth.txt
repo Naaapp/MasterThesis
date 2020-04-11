@@ -1,0 +1,1 @@
+{"cCanonicalRNN_0.9_Gaussian": 15.026827812194824}

@@ -187,6 +187,7 @@ class CustomCanonicalPredictionNetwork(CustomCanonicalNetworkBase):
             self.proj_distr_args(outputs), scale=target_scale
         )
         save_distr_params(distr.base_distribution, self.count, self.distr_output_type, self.alpha, "cCanonicalRNN")
+        print("test")
 
         samples = distr.sample(
             self.num_parallel_samples

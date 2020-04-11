@@ -3,6 +3,9 @@
 import dataset as dt
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import scipy
+import math
 
 # Import dataset
 from comparison import compare_all_models, compare_simple, compare_simple_feed_forward, compare_canonicalrnn
@@ -23,22 +26,19 @@ dataset = dt.Dataset(custom_dataset=imported_dataset, start=start, freq=freq,
 chosen_metric = "Coverage"
 quantiles = list([0.005, 0.05, 0.25, 0.5, 0.75, 0.95, 0.995])
 
-# models = ["cSimple", "SimpleFeedForward", "CanonicalRNN", "DeepAr", "DeepFactor", "GaussianProcess",
-#           "NPTS", "MQCNN", "MQRNN", "R", "SeasonalNaive"]
-# distributions = ["Gaussian", "Laplace", "PiecewiseLinear", ]
-# No quantiles in Student, Uniform has a problem with loss
-
 distributions = ["Gaussian"]
-models = ["DeepState"]
-alphas = [0.7, 0.8, 0.9]
-compare_all_models(dataset, distributions, alphas, models, chosen_metric, 10)
+models = ["cSimple", "SimpleFeedForward", "CanonicalRNN", "DeepAr", "DeepFactor", "GaussianProcess", "NPTS", "MQCNN",
+          "MQRNN", "R", "SeasonalNaive"]
+alphas = [0.9]
+epochs = 10
+compare_all_models(dataset, distributions, alphas, models, chosen_metric, epochs, True)
 
 distribution = "Gaussian"
 alpha = 0.9
 num_cells = [10, 50, 100, 200, 300]
 # compare_simple(dataset, distribution, alpha, chosen_metric, 10, num_cells)
-num_hidden_dimensions = [[10], [40], [40, 40], [40, 40, 40]]
-compare_simple_feed_forward(dataset, distribution, alpha, chosen_metric, 1, num_hidden_dimensions)
-num_layers = [1, 2, 5, 10]
-compare_canonicalrnn(dataset, distribution, alpha, chosen_metric, 10, num_layers)
+# num_hidden_dimensions = [[10], [40], [40, 40], [40, 40, 40]]
+# compare_simple_feed_forward(dataset, distribution, alpha, chosen_metric, 1, num_hidden_dimensions)
+# num_layers = [1, 2, 5, 10]
+# compare_canonicalrnn(dataset, distribution, alpha, chosen_metric, 10,'n_layers', num_layers,)
 # hist_plot_item_metrics(chosen_metric, models)  # Not precise for Coverage (too much around)

@@ -50,7 +50,6 @@ class CustomSimpleTrainNetwork(CustomSimpleNetwork):
         # negative log-likelihood
         loss = distr.loss(future_target)
         loss = compute_custom_loss(loss, self.distr_output_type, self.alpha, distr, future_target)
-
         return loss
 
 

@@ -1,1 +1,0 @@
-cSimpleFeedForward : best alpha (Coverage > 0, lowest bandwith) (gaussian, 100 epochs) is

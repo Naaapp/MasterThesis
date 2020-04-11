@@ -1,6 +1,6 @@
 from forecast import forecast_dataset
 from plots import add_agg_metric_to_dict, add_bandwidth_to_dict, plot_prob_forecasts, save_item_metrics, \
-    plot_agg_metric_dict, plot_bandwidth_dict, plot_distr_params
+    plot_agg_metric_dict, plot_bandwidth_dict, plot_distr_params, save_distr_quantiles
 
 
 def add_metrics_plots_and_save(dataset, forecasts, tss, metric, plot_name, params_name, params_val, is_show):
@@ -48,7 +48,7 @@ def compare_simple(dataset, distribution, alpha, metric, epochs, num_cells):
             num_cells_simple=num_cell
         )
         params_val = str(num_cell)
-        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val)
+        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val, False)
 
     plot_agg_metric_dict(metric, model, params_name)
     plot_bandwidth_dict(model, params_name)
@@ -67,7 +67,7 @@ def compare_simple_feed_forward(dataset, distribution, alpha, metric, epochs, nu
             num_hidden_dimensions=num_hidden_dimension
         )
         params_val = str(num_hidden_dimension)
-        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val)
+        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val, False)
 
     plot_agg_metric_dict(metric, model, params_name)
     plot_bandwidth_dict(model, params_name)
@@ -95,7 +95,7 @@ def compare_canonicalrnn(dataset, distribution, alpha, metric, epochs, params_na
                 num_cells_rnn=value
             )
         params_val = str(value)
-        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val)
+        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val, False)
 
     plot_agg_metric_dict(metric, model, params_name)
     plot_bandwidth_dict(model, params_name)
@@ -123,7 +123,7 @@ def compare_deepar(dataset, distribution, alpha, metric, epochs, params_name, va
                 num_cells_ar=value
             )
         params_val = str(value)
-        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val)
+        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val, False)
 
     plot_agg_metric_dict(metric, model, params_name)
     plot_bandwidth_dict(model, params_name)
@@ -150,7 +150,7 @@ def compare_deepfactor(dataset, distribution, alpha, metric, epochs, params_name
                 alpha=alpha,
                 num_layers_global=value
             )
-        else :
+        else:
             forecasts, tss = forecast_dataset(
                 dataset,
                 model=model,
@@ -160,7 +160,7 @@ def compare_deepfactor(dataset, distribution, alpha, metric, epochs, params_name
                 num_factors=value
             )
         params_val = str(value)
-        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val)
+        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val, False)
 
     plot_agg_metric_dict(metric, model, params_name)
     plot_bandwidth_dict(model, params_name)
@@ -179,7 +179,8 @@ def compare_mqcnn(dataset, distribution, alpha, metric, epochs, mlp_final_dims):
             mlp_final_dim=mlp_final_dim
         )
         params_val = str(mlp_final_dim)
-        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val)
+        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val, False)
+        # save_distr_quantiles(model, forecasts[0], quantiles)
 
     plot_agg_metric_dict(metric, model, params_name)
     plot_bandwidth_dict(model, params_name)
@@ -198,7 +199,8 @@ def compare_mqrnn(dataset, distribution, alpha, metric, epochs, mlp_final_dims):
             mlp_final_dim=mlp_final_dim
         )
         params_val = str(mlp_final_dim)
-        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val)
+        add_metrics_plots_and_save(dataset, forecasts, tss, metric, model, params_name, params_val, False)
+        # save_distr_quantiles(model, forecasts[0], quantiles)
 
     plot_agg_metric_dict(metric, model, params_name)
     plot_bandwidth_dict(model, params_name)

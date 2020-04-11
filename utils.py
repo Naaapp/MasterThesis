@@ -31,7 +31,6 @@ def save_distr_params(distr, count, distr_output_type, alpha, model):
             distr_params = [distr.mu[0].asnumpy(), distr.sigma[0].asnumpy(), distr.nu[0].asnumpy()]
         else:
             distr_params = []
-        print(distr_output_type)
         np.save("distribution_output/" + model + "_" + distr_output_type + "_" +
                 str(alpha).replace(".", "_") + ".npy", distr_params)
         count += 1

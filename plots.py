@@ -69,7 +69,7 @@ def save_item_metrics(dataset, forecasts, tss, model, metric):
 def hist_plot_item_metrics(metric, models):
     for model in models:
         item_metric = np.load("item_metrics/" + metric + '_' + model + '.npy')
-        plt.hist(item_metric * 1000, bins=range(-100, 100, 1), rwidth=0.8, label=model,
+        plt.hist(item_metric * 1000, bins=range(0, 100, 5), rwidth=0.8, label=model,
                  alpha=0.5)
     plt.title(metric)
     plt.legend(loc='upper right')
@@ -77,6 +77,8 @@ def hist_plot_item_metrics(metric, models):
 
 
 def add_agg_metric_to_dict(dataset, forecasts, tss, metric, plot_name, params_name, params_val):
+    if params_name == "":
+        plot_name = ""
     try:
         with open("agg_metrics/" + plot_name + "_" + params_name + "_" + metric + '.txt') as json_file:
             current_dict = json.load(json_file)
@@ -104,12 +106,15 @@ def add_agg_metric_to_dict(dataset, forecasts, tss, metric, plot_name, params_na
 def plot_agg_metric_dict(metric, plot_name, params_name):
     with open("agg_metrics/" + plot_name + "_" + params_name + "_" + metric + '.txt') as json_file:
         current_dict = json.load(json_file)
+    # plt.figure(figsize=(7, 4.8))
     plt.bar(list(current_dict.keys()), current_dict.values(), color='g')
     plt.title(metric + " " + plot_name + " " + params_name + " comparison")
     plt.show()
 
 
 def add_bandwidth_to_dict(forecasts, plot_name, params_name, params_val):
+    if params_name == "":
+        plot_name = ""
     try:
         with open("agg_metrics/" + plot_name + "_" + params_name + "_bandwidth.txt") as json_file:
             current_dict = json.load(json_file)
@@ -125,7 +130,8 @@ def add_bandwidth_to_dict(forecasts, plot_name, params_name, params_val):
 def plot_bandwidth_dict(plot_name, params_name):
     with open("agg_metrics/" + plot_name + "_" + params_name + "_bandwidth.txt") as json_file:
         current_dict = json.load(json_file)
-    plt.bar(list(current_dict.keys()), current_dict.values(), color='g')
+    # plt.figure(figsize=(7,4.8))
+    plt.bar(list(current_dict.keys()), current_dict.values())
     plt.title("bandwidth" + " " + plot_name + " " + params_name + " comparison")
     plt.show()
 
@@ -152,7 +158,7 @@ def plot_distr_params(models, alphas, distributions):
                     if model[0] == "c":
                         distr_params = np.load(
                             "distribution_output/" + model + "_" + distribution + "_" + str(alpha) + ".npy")
-                        print(params[i], alpha, distr_params[i])
+                        # print(params[i], alpha, distr_params[i])
                         plt.hist(distr_params[i], bins=range(0, 10, 1), rwidth=0.8, label=model + "_" + str(alpha),
                                  alpha=0.5)
             plt.title(param + " of obtained distribution (frequency of values along the time axis) ")
