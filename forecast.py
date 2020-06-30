@@ -1,21 +1,24 @@
-from gluonts.distribution import GaussianOutput, LaplaceOutput, PiecewiseLinearOutput, UniformOutput, \
-    StudentTOutput
-from gluonts.model.simple_feedforward import SimpleFeedForwardEstimator
-from gluonts.model import deepar, canonical, deep_factor, deepstate, gp_forecaster, \
-    npts, prophet, r_forecast, seasonal_naive, seq2seq, \
-    transformer
-from gluonts.trainer import Trainer
-from gluonts.evaluation.backtest import make_evaluation_predictions
-from gluonts.evaluation import Evaluator
-from gluonts.model.predictor import Predictor
-import matplotlib.pyplot as plt
 import mxnet as mx
-from path import Path
-from gluonts.block.encoder import Seq2SeqEncoder
-from mxnet import nd, gpu, gluon, autograd
+from gluonts.evaluation.backtest import make_evaluation_predictions
+from gluonts.model import canonical, deepar, deep_factor, deepstate, gp_forecaster, npts, seq2seq, transformer, prophet, \
+    r_forecast, seasonal_naive
+from gluonts.model.simple_feedforward import SimpleFeedForwardEstimator
+from pathlib import Path
+from gluonts.distribution.gaussian import GaussianOutput
+from gluonts.distribution.laplace import LaplaceOutput
+from gluonts.distribution.student_t import StudentTOutput
+from gluonts.distribution.piecewise_linear import PiecewiseLinearOutput
+from gluonts.distribution.uniform import UniformOutput
+from gluonts.model.predictor import Predictor
+from gluonts.trainer import Trainer
+
+from custom_models.CustomDeepFactorEstimator import CustomDeepFactorEstimator
 from custom_models.CustomSimpleEstimator import CustomSimpleEstimator
 from custom_models.CustomSimpleFeedFordwardEstimator import CustomSimpleFeedForwardEstimator
 from custom_models.CustomCanonicalEstimator import CustomCanonicalRNNEstimator
+from custom_models.CustomDeepArEstimator import CustomDeepAREstimator
+
+mx.random.seed(0)
 
 
 def forecast_dataset(dataset,
@@ -37,9 +40,10 @@ def forecast_dataset(dataset,
                      num_hidden_global=50,
                      num_layers_global=1,
                      num_factors=10,
-                     mlp_final_dim=20
+                     mlp_final_dim=20,
+                     use_static=False,
+                     cardinality=None
                      ):
-
     if distrib == "Gaussian":
         distr_output = GaussianOutput()
     elif distrib == "Laplace":
@@ -63,6 +67,7 @@ def forecast_dataset(dataset,
                       learning_rate=learning_rate,
                       num_batches_per_epoch=100,
                       ctx=ctx,
+                      # hybridize=True if model != "cSimple" else False
                       hybridize=True if model[0] != "c" else False
                       )
 
@@ -75,8 +80,8 @@ def forecast_dataset(dataset,
             trainer=trainer,
             alpha=alpha,
             distr_output=distr_output,
-            distr_output_type=distrib,
-            num_cells=num_cells_simple,
+            # distr_output_type=distrib,
+            num_cells=num_cells_simple
         )
     elif model == "SimpleFeedForward":
         estimator = SimpleFeedForwardEstimator(
@@ -95,7 +100,7 @@ def forecast_dataset(dataset,
             trainer=trainer,
             alpha=alpha,
             distr_output=distr_output,
-            distr_output_type=distrib,
+            # distr_output_type=distrib,
             num_hidden_dimensions=num_hidden_dimensions,
         )
     elif model == "CanonicalRNN":
@@ -127,10 +132,35 @@ def forecast_dataset(dataset,
             trainer=trainer,
             distr_output=distr_output,
             num_cells=num_cells_ar,
-            num_layers=num_layers_ar
+            num_layers=num_layers_ar,
+            use_feat_static_cat=use_static,
+            cardinality=list(cardinality),
+        )
+    elif model == "cDeepAr":
+        estimator = CustomDeepAREstimator(
+            freq=dataset.freq,
+            context_length=dataset.context_length,
+            prediction_length=dataset.prediction_length,
+            trainer=trainer,
+            distr_output=distr_output,
+            num_cells=num_cells_ar,
+            num_layers=num_layers_ar,
+            use_feat_static_cat=use_static,
+            cardinality=cardinality,
         )
     elif model == "DeepFactor":
         estimator = deep_factor.DeepFactorEstimator(
+            freq=dataset.freq,
+            context_length=dataset.context_length,
+            prediction_length=dataset.prediction_length,
+            trainer=trainer,
+            distr_output=distr_output,
+            num_hidden_global=num_hidden_global,
+            num_layers_global=num_layers_global,
+            num_factors=num_factors
+        )
+    elif model == "cDeepFactor":
+        estimator = CustomDeepFactorEstimator(
             freq=dataset.freq,
             context_length=dataset.context_length,
             prediction_length=dataset.prediction_length,
@@ -201,7 +231,7 @@ def forecast_dataset(dataset,
             embedding_dimension=1,
             decoder_mlp_layer=[1],
             decoder_mlp_static_dim=1,
-            encoder=Seq2SeqEncoder()
+            # encoder=Seq2SeqEncoder()
         )
     elif model == "Transformer":  # Make the computer lag the first time
         estimator = transformer.TransformerEstimator(

@@ -144,7 +144,7 @@ class CustomSimpleFeedForwardTrainingNetwork(CustomSimpleFeedForwardNetworkBase)
 
         # (batch_size, prediction_length, target_dim)
         loss = distr.loss(future_target)
-        loss = compute_custom_loss(loss, self.distr_output_type, self.alpha, distr, future_target)
+        loss = compute_custom_loss(loss, self.alpha, distr, future_target)
 
         # (batch_size, )
         return loss.mean(axis=1)

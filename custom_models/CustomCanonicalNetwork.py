@@ -119,7 +119,7 @@ class CustomCanonicalTrainingNetwork(CustomCanonicalNetworkBase):
         )
 
         loss = distr.loss(past_target)
-        loss = compute_custom_loss(loss, self.distr_output_type, self.alpha, distr, past_target)
+        loss = compute_custom_loss(loss, self.alpha, distr, past_target)
 
         return loss
 
@@ -187,7 +187,6 @@ class CustomCanonicalPredictionNetwork(CustomCanonicalNetworkBase):
             self.proj_distr_args(outputs), scale=target_scale
         )
         save_distr_params(distr.base_distribution, self.count, self.distr_output_type, self.alpha, "cCanonicalRNN")
-        print("test")
 
         samples = distr.sample(
             self.num_parallel_samples

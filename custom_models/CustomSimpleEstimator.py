@@ -1,16 +1,13 @@
 from gluonts.dataset.field_names import FieldName
-from gluonts.distribution.gaussian import GaussianOutput
-from gluonts.distribution import DistributionOutput
+from gluonts.distribution.distribution_output import DistributionOutput
 from gluonts.model.estimator import GluonEstimator
 from gluonts.model.predictor import Predictor, RepresentableBlockPredictor
 from gluonts.core.component import validated
 from gluonts.trainer import Trainer
 from gluonts.support.util import copy_parameters
 from gluonts.transform import ExpectedNumInstanceSampler, Transformation, InstanceSplitter
-from mxnet import gluon
-import mxnet as mx
 from mxnet.gluon import HybridBlock
-from custom_models.CustomSimpleNetwork import CustomSimpleTrainNetwork, CustomSimplePredNetwork
+from custom_models.CustomSimpleNetwork import MyProbPredNetwork, MyProbTrainNetwork
 
 
 class CustomSimpleEstimator(GluonEstimator):
@@ -21,7 +18,6 @@ class CustomSimpleEstimator(GluonEstimator):
             context_length: int,
             freq: str,
             distr_output: DistributionOutput,
-            distr_output_type: str,
             num_cells: int,
             num_sample_paths: int = 100,
             trainer: Trainer = Trainer(),
@@ -32,7 +28,6 @@ class CustomSimpleEstimator(GluonEstimator):
         self.context_length = context_length
         self.freq = freq
         self.distr_output = distr_output
-        self.distr_output_type = distr_output_type
         self.num_cells = num_cells
         self.num_sample_paths = num_sample_paths
         self.alpha = alpha
@@ -48,11 +43,10 @@ class CustomSimpleEstimator(GluonEstimator):
             future_length=self.prediction_length,
         )
 
-    def create_training_network(self) -> CustomSimpleTrainNetwork:
-        return CustomSimpleTrainNetwork(
+    def create_training_network(self) -> MyProbTrainNetwork:
+        return MyProbTrainNetwork(
             prediction_length=self.prediction_length,
             distr_output=self.distr_output,
-            distr_output_type=self.distr_output_type,
             num_cells=self.num_cells,
             num_sample_paths=self.num_sample_paths,
             alpha=self.alpha
@@ -61,10 +55,9 @@ class CustomSimpleEstimator(GluonEstimator):
     def create_predictor(
             self, transformation: Transformation, trained_network: HybridBlock
     ) -> Predictor:
-        prediction_network = CustomSimplePredNetwork(
+        prediction_network = MyProbPredNetwork(
             prediction_length=self.prediction_length,
             distr_output=self.distr_output,
-            distr_output_type=self.distr_output_type,
             num_cells=self.num_cells,
             num_sample_paths=self.num_sample_paths,
             alpha=self.alpha
