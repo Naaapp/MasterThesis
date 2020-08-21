@@ -1,20 +1,39 @@
+# Master Thesis (Théo Stassen, Université de Liège) :
+# "Comparison of probabilistic forecasting deep learning models in the context of renewable energy production"
+#
+# - Different utils functions
+
+
 from mxnet import nd
 import numpy as np
 
 
 def compute_custom_loss(loss, alpha, distr, future_target):
+    """
+    Compute the custom loss
+    :param loss: value of the default loss
+    :param alpha: alpha parameter value
+    :param distr: output distribution object predicted
+    :param future_target: value obsereved
+    :return: value of the custom loss
+    """
     alpha = alpha
     quantile_high = distr.quantile(nd.array([0.995]))[0]
-    quantile_low = distr.quantile(nd.array([0.005]))[0]
     future_high = future_target - quantile_high
-    future_low = quantile_low - future_target
     loss1 = nd.exp(future_high) * alpha
-    loss2 = nd.exp(future_low) * alpha
-    loss = loss1 + loss2 + loss
+    loss = loss1 + loss
     return loss
 
 
 def save_distr_params(distr, count, distr_output_type, alpha, model):
+    """
+    Save the parameters of the distribution output object -> Not used in current version
+    :param distr: output distribution object predicted
+    :param count: value that count the number of saves
+    :param distr_output_type: type of the distribution output object
+    :param alpha: value of parameter alpha
+    :param model: selected model
+    """
     if not count:
         if distr_output_type == "Gaussian":
             distr_params = [distr.mu[0].asnumpy(), distr.sigma[0].asnumpy()]
@@ -27,7 +46,7 @@ def save_distr_params(distr, count, distr_output_type, alpha, model):
         elif distr_output_type == "Uniform":
             distr_params = [distr.low[0].asnumpy(), distr.high[0].asnumpy()]
         elif distr_output_type == "Student":
-            distr_params = [distr.mu[0].asnumpy(), distr.sigma[0].asnumpy(), distr.mu[0].asnumpy()]
+            distr_params = [distr.mu[0].asnumpy(), distr.sigma[0].asnumpy(), distr.nu[0].asnumpy()]
         else:
             distr_params = []
         np.save("distribution_output/" + model + "_" + distr_output_type + "_" +

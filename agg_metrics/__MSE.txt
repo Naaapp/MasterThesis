@@ -1,1 +1,0 @@
-{"cSimple_0.9_Gaussian": 0.519559004974979, "cSimpleFeedForward_0.9_Gaussian": 1.57721362482423, "cCanonicalRNN_0.9_Gaussian": 12.297509562840451}

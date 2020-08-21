@@ -1,1 +1,0 @@
-{"cSimple/0_9/Gaussian": -0.00311475409836062, "cSimple 0_9 Gaussian": -0.009125683060109347, "cDeepAr 0_9 Gaussian": -0.06103825136612019, "cSimpleFeedForward 0 Gaussian": -0.20475409836065567, "cSimpleFeedForward 0_9 Gaussian": -0.07142076502732235, "cSimple 0 Gaussian": -0.0069398907103823465}

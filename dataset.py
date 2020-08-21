@@ -1,14 +1,18 @@
+# Master Thesis (Théo Stassen, Université de Liège) :
+# "Comparison of probabilistic forecasting deep learning models in the context of renewable energy production"
+#
+# - Defines the class Dataset containing training and testing sets and metadata, for an custom or imported input dataset
+
 from gluonts.dataset.common import ListDataset
 from gluonts.dataset.field_names import FieldName
 from gluonts.dataset.util import to_pandas
-
 
 class Dataset:
 
     def __init__(self, dataset=None, custom_train_dataset=None, custom_test_dataset=None,
                  start=None, freq=None, prediction_length=None,
                  learning_length=None, context_length=100, cardinality_train=None, cardinality_test=None,
-                 train_static_feat=None, test_static_feat=None):
+                 train_static_feat=None, test_static_feat=None, num_series=None):
         if dataset is not None:
             self.learning_length = len(to_pandas(next(iter(dataset.train))))
             self.prediction_length = dataset.metadata.prediction_length
@@ -25,13 +29,7 @@ class Dataset:
             self.context_length = context_length
             self.cardinality_train = cardinality_train
             self.cardinality_test = cardinality_test
-            # train dataset: cut the last window of length "prediction_length",
-            # add "target" and "start" fields
-            # self.train_ds = ListDataset([{'target': x, 'start': start}
-            #                              for x in
-            #                              custom_train_dataset[:,
-            #                              :-prediction_length]],
-            #                             freq=freq)
+            self.num_series = num_series
             self.train_ds = ListDataset([{FieldName.TARGET: target,
                                           FieldName.START: start,
                                           FieldName.FEAT_STATIC_CAT: [fsc]}
@@ -39,7 +37,6 @@ class Dataset:
                                                                   :-prediction_length],
                                                                   train_static_feat)],
                                         freq=freq)
-            # test dataset: use the whole dataset, add "target" and "start"
             self.test_ds = ListDataset([{FieldName.TARGET: target,
                                          FieldName.START: start,
                                          FieldName.FEAT_STATIC_CAT: [fsc]}

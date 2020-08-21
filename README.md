@@ -1,4 +1,4 @@
-# MasterThesis
-Théo Stassen
+# Master Thesis (Théo Stassen, Université de Liège) :
+# "Comparison of probabilistic forecasting deep learning models in the context of renewable energy production"
 
-See MasterThesis.ipynb
+See Master Thesis report
